@@ -82,7 +82,7 @@ class TokenEnforcer:
             if state.parser.can_end():
                 allowed_tokens.append(self.eos_token_id)
             if not allowed_tokens:
-                raise ValueError(f"Parser reached state with no allowed tokens")
+                raise ValueError("Parser reached state with no allowed tokens")
             # root_state = next(state for state in self.prefix_states.values() if state.parser == self.root_parser)
             # print(f"Allowing {len(allowed_tokens)} tokens after {state.str_so_far[len(root_state.str_so_far):]}")
             state.allowed_tokens = allowed_tokens

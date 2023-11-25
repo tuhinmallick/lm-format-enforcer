@@ -91,23 +91,23 @@ def generate_enforced(model: AutoModelForCausalLM,
     If you don't need this, consider using prefix_allowed_tokens_fn + build_transformers_prefix_allowed_tokens_fn() instead"""
     
     transformers_filter_allowed_tokens = build_transformers_prefix_allowed_tokens_fn(tokenizer, character_level_parser)
-    
+
     is_multi_inputs = kwargs['input_ids'].shape[0] > 1
     is_multi_beams = kwargs.get('num_beams', 1) > 1
     support_diagnostics = not (is_multi_inputs or is_multi_beams)  # TODO: Support diagnostics in these cases as well.
     return_dict_in_generate = kwargs.get('return_dict_in_generate', False)
     output_scores = kwargs.get('output_scores', None)
 
-    # We do some internals hacking in order to extract the data needed for diagnostics. If we weren't asked for them,
-    # we are better off simply using prefix_allowed_tokens_fn parameter.
-    should_run_in_advanced_mode = return_dict_in_generate and output_scores and support_diagnostics
-
-    if should_run_in_advanced_mode:
+    if (
+        should_run_in_advanced_mode := return_dict_in_generate
+        and output_scores
+        and support_diagnostics
+    ):
         analyzer = FormatEnforcerAnalyzer(transformers_filter_allowed_tokens.token_enforcer)
         logits_saver = LogitsSaverManager(model, analyzer)
         logits_saver.replace_logits_warper(transformers_filter_allowed_tokens)
         generate_kwargs = kwargs
-        
+
         try:
             output = model.generate(**generate_kwargs)
         finally:
@@ -117,7 +117,7 @@ def generate_enforced(model: AutoModelForCausalLM,
         output.enforced_scores = df_dict
     else:
         output = model.generate(**kwargs, prefix_allowed_tokens_fn=transformers_filter_allowed_tokens)
-    
+
     return output
 
 __all__ = [

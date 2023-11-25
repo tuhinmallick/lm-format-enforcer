@@ -50,7 +50,8 @@ def build_llamacpp_logits_processor(llm: Llama, character_level_parser: Characte
         try:
             return llm.detokenize(sent).decode('utf-8')
         except:
-            return decoder(sent[:-1]) + '�'
+            return f'{decoder(sent[:-1])}�'
+
     token_enforcer = TokenEnforcer(regular_tokens, character_level_parser, decoder, llm.token_eos())
     return LlamaCppLogitsProcessor(token_enforcer, analyze)
 

@@ -11,11 +11,10 @@ def assert_parser_with_string(string: str, parser: CharacterLevelParser, expect_
         try:
             if character in parser.get_allowed_characters():
                 parser = parser.add_character(character)
+            elif expect_success:
+                raise CharacterNotAllowedException(f"Parser does not allow '{character}' at index {idx}")
             else:
-                if expect_success:
-                    raise CharacterNotAllowedException(f"Parser does not allow '{character}' at index {idx}")
-                else:
-                    return  # Success
+                return  # Success
         except LMFormatEnforcerException:
             raise
         except Exception as e:

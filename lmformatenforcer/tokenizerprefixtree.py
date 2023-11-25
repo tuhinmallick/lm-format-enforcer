@@ -15,7 +15,7 @@ class TokenizerPrefixTree:
             self._add_token_to_tree(decoded, token_idx, self.root)
             # Performance optimization - cache the tokens of all the strings that don't contain a quote in the middle, or a line break.
             # When we are in a JSON freetext string field, they will all be permitted and this will save a lot of tree iterations.
-            has_quote_before_end = '"' in decoded[0:-1]
+            has_quote_before_end = '"' in decoded[:-1]
             has_newline = "\n" in decoded or "\r" in decoded
 
             if not (has_quote_before_end or has_newline):

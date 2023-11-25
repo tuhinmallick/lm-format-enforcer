@@ -84,19 +84,17 @@ class UnionParser(CharacterLevelParser):
         self.parsers = parsers
 
     def add_character(self, new_character: str) -> CharacterLevelParser:
-        # This is a bit of a performance hit, as it means get_allowed_characters() is called twice.
-        relevant_parsers = [parser for parser in self.parsers if new_character in parser.get_allowed_characters()]
-        next_parsers = [parser.add_character(new_character) for parser in relevant_parsers]
-        if len(next_parsers) == 1:
-            return next_parsers[0]
-        return UnionParser(next_parsers)
+            # This is a bit of a performance hit, as it means get_allowed_characters() is called twice.
+            relevant_parsers = [parser for parser in self.parsers if new_character in parser.get_allowed_characters()]
+            next_parsers = [parser.add_character(new_character) for parser in relevant_parsers]
+            return next_parsers[0] if len(next_parsers) == 1 else UnionParser(next_parsers)
     
     def get_allowed_characters(self) -> str:
         allowed = "".join([parser.get_allowed_characters() for parser in self.parsers])
         return "".join(set(allowed))
     
     def can_end(self) -> bool:
-        return any([parser.can_end() for parser in self.parsers])
+            return any(parser.can_end() for parser in self.parsers)
     
     def shortcut_key(self) -> Optional[str]:
         return self.parsers[0].shortcut_key() if len(self.parsers) == 1 else None
@@ -138,7 +136,7 @@ class SequenceParser(CharacterLevelParser):
         return "".join(allowed_characters)
     
     def can_end(self) -> bool:
-        return all([parser.can_end() for parser in self.parsers])
+            return all(parser.can_end() for parser in self.parsers)
     
     def shortcut_key(self) -> Optional[str]:
         return self.parsers[0].shortcut_key() if len(self.parsers) == 1 else None

@@ -81,14 +81,14 @@ class JsonSchemaParser(CharacterLevelParser):
             allowed_character_strs.append(parser.get_allowed_characters())
             if not parser.can_end():
                 break
-        if len(allowed_character_strs) > 0:
+        if allowed_character_strs:
             allowed_characters =  "".join(allowed_character_strs)
         else:
             # In certain cases, beam search / sample crashes when there are less legal 
             # continuation tokens than there are beams. Therefore, we allow whitespace 
             # characters when the object stack is empty (= we are done parsing)
             allowed_characters = WHITESPACE_CHARACTERS
-        
+
         if self.num_consecutive_whitespaces >= MAX_CONSECUTIVE_WHITESPACES:
             # print("Filtering whitespace characters")
             allowed_characters = "".join(c for c in allowed_characters if c not in WHITESPACE_CHARACTERS)
@@ -134,7 +134,7 @@ def get_parser(
         )
     elif value_schema.type == "object":
         return ObjectParsingState(value_schema, parsing_state)
-    elif value_schema.type == None and value_schema.ref:
+    elif value_schema.type is None and value_schema.ref:
         value_class_name = value_schema.ref.split('/')[-1]
         extras = parsing_state.context.model_class.extras
         # Pydantic V1 and V2 have different names for the definitions field
@@ -151,11 +151,11 @@ def get_parser(
         is_numeric = all(isinstance(i, (int, float)) for i in value_schema.enum)
         is_string = all(isinstance(i, (str)) for i in value_schema.enum)
         if is_string:
-            return StringParsingState(
-            parsing_state,
-            value_schema.enum,
-            require_opening_quote=True,
-        )
+                return StringParsingState(
+                parsing_state,
+                value_schema.enum,
+                require_opening_quote=True,
+            )
         elif is_numeric:
             return StringParsingState(
                 parsing_state,
@@ -164,7 +164,7 @@ def get_parser(
                 require_closing_quote=False,
             )
         else:
-            raise Exception("Unsupported enum type " + str(value_schema.enum))
+            raise Exception(f"Unsupported enum type {str(value_schema.enum)}")
     elif value_schema.type == "integer":
         return NumberParsingState(parsing_state, False)
     elif value_schema.type == "boolean":
@@ -187,7 +187,7 @@ def get_parser(
         item_schema = value_schema.items or JsonSchemaParser.ANY_JSON_OBJECT_SCHEMA
         return ListParsingState(parsing_state, item_schema, value_schema.minItems, value_schema.maxItems)
     else:
-        raise Exception("Unsupported type " + str(value_schema.type))
+        raise Exception(f"Unsupported type {str(value_schema.type)}")
 
 
 class ObjectParsingStage(enum.Enum):
@@ -225,7 +225,7 @@ class ObjectParsingState(BaseParsingState):
         return clone
 
     def add_character(self, new_character: str) -> CharacterLevelParser:
-        if new_character.strip() == "":
+        if not new_character.strip():
             # In object scope, whitespaces can be ignored
             return self
         self = self.clone()  # Immutability requirement
@@ -237,7 +237,7 @@ class ObjectParsingState(BaseParsingState):
         elif self.current_stage == ObjectParsingStage.PARSING_KEY_OR_END:
             if new_character == "}":
                 self.current_stage = ObjectParsingStage.END_OBJECT
-            if new_character == '"':
+            elif new_character == '"':
                 possible_keys = None
                 if not self.is_dictionary:
                     possible_keys = list(self.schema_object.properties.keys())
@@ -276,12 +276,12 @@ class ObjectParsingState(BaseParsingState):
         elif self.current_stage == ObjectParsingStage.PARSING_VALUE:
             # If we recieve a character during parsing value, it means that its the finishing character
             # of the value parser
-            if new_character == '"':
-                self.current_stage = ObjectParsingStage.PARSING_SEPARATOR_OR_END
-            elif new_character == ",":
+            if new_character == ",":
                 self.current_stage = ObjectParsingStage.PARSING_KEY_OR_END
             elif new_character == "}":
                 self.current_stage = ObjectParsingStage.END_OBJECT
+            elif new_character == '"':
+                self.current_stage = ObjectParsingStage.PARSING_SEPARATOR_OR_END
         elif self.current_stage == ObjectParsingStage.PARSING_SEPARATOR_OR_END:
             if new_character == ",":
                 self.current_stage = ObjectParsingStage.PARSING_KEY_OR_END
@@ -301,7 +301,7 @@ class ObjectParsingState(BaseParsingState):
             self.existing_keys
         )
 
-        possible_characters = [c for c in WHITESPACE_CHARACTERS]
+        possible_characters = list(WHITESPACE_CHARACTERS)
         if self.current_stage == ObjectParsingStage.START_OBJECT:
             possible_characters.append('{')
         elif self.current_stage == ObjectParsingStage.PARSING_KEY_OR_END:
@@ -311,13 +311,11 @@ class ObjectParsingState(BaseParsingState):
                 possible_characters.append('"')
         elif self.current_stage == ObjectParsingStage.PARSING_KEY_VALUE_SEPARATOR:
             possible_characters.append(':')
-        elif self.current_stage == ObjectParsingStage.PARSING_VALUE:
+        elif self.current_stage in [
+            ObjectParsingStage.PARSING_VALUE,
+            ObjectParsingStage.PARSING_SEPARATOR_OR_END,
+        ]:
             # Sometimes the value parser considers finishing, so it needs to know which continuations are possible
-            if can_end:
-                possible_characters.append('}')
-            if can_parse_key:
-                possible_characters.append(',')
-        elif self.current_stage == ObjectParsingStage.PARSING_SEPARATOR_OR_END:
             if can_end:
                 possible_characters.append('}')
             if can_parse_key:
@@ -387,7 +385,7 @@ class NumberParsingState(PrimitiveParsingState):
             return WHITESPACE_CHARACTERS
         allowed_characters = "0123456789"
         if not self.parsed_string:
-            allowed_characters += "-" + WHITESPACE_CHARACTERS
+            allowed_characters += f"-{WHITESPACE_CHARACTERS}"
         if self.allow_floating_point and not self.seen_decimal_point:
             allowed_characters += "."
         if self.parsed_string and self.parsed_string[-1].isdigit():
@@ -443,12 +441,12 @@ class StringParsingState(PrimitiveParsingState):
             return self
         self = cast(StringParsingState, super().add_character(new_character))
         if new_character == '"':
-            if not self.seen_opening_quote:
-                self.seen_opening_quote = True
-                self.parsed_string = ""
-            else:
+            if self.seen_opening_quote:
                 self.seen_closing_quote = True
                 self.parsed_string = self.parsed_string[:-1]
+            else:
+                self.seen_opening_quote = True
+                self.parsed_string = ""
         if new_character == BACKSLASH:
             # After a backslack we immediately have the escaping character, and if its 'u', we have 4 hex digits
             escaping_character_parsers: List[CharacterLevelParser] = [StringParser(c) for c in BACKSLASH_ESCAPING_CHARACTERS]
@@ -461,7 +459,7 @@ class StringParsingState(PrimitiveParsingState):
 
     def get_allowed_characters(self) -> str:
         if not self.seen_opening_quote:
-            return '"' + WHITESPACE_CHARACTERS
+            return f'"{WHITESPACE_CHARACTERS}'
         if self.seen_closing_quote:
             return WHITESPACE_CHARACTERS
         if self.allowed_strings:
@@ -487,11 +485,10 @@ class StringParsingState(PrimitiveParsingState):
     def can_end(self) -> bool:
         if self.require_closing_quote:
             return self.seen_closing_quote
+        if self.allowed_strings:
+            return self.parsed_string in self.allowed_strings
         else:
-            if self.allowed_strings:
-                return self.parsed_string in self.allowed_strings
-            else:
-                return bool(self.parsed_string)
+            return bool(self.parsed_string)
 
 
 class ListParsingState(PrimitiveParsingState):
@@ -522,33 +519,33 @@ class ListParsingState(PrimitiveParsingState):
 
     def add_character(self, new_character: str) -> "ListParsingState":
         self = cast(ListParsingState, super().add_character(new_character))
-        if new_character == "[":
-            self.seen_list_opener = True
-            item_parser = get_parser(self.root, self.list_member_type)
-            requires_items = self.min_items is not None and self.min_items > 0
-            if requires_items:
-                parser_to_push = item_parser
-            else:
-                # If we don't require items, we can also end immediately, the Union + ForceStopParser combination achieves this
-                parser_to_push = UnionParser([item_parser, ForceStopParser()])
-            self.root.context.active_parser.object_stack.append(parser_to_push)
-        elif new_character == "]":
-            self.seen_list_closer = True
-        elif new_character == ",":
+        if new_character == ",":
             if not self.seen_list_closer:
                 self.num_items_seen += 1
-                
+
                 self.root.context.active_parser.object_stack.append(
                     get_parser(
                         self.root,
                         self.list_member_type,
                     )
                 )
+        elif new_character == "[":
+            self.seen_list_opener = True
+            item_parser = get_parser(self.root, self.list_member_type)
+            requires_items = self.min_items is not None and self.min_items > 0
+            parser_to_push = (
+                item_parser
+                if requires_items
+                else UnionParser([item_parser, ForceStopParser()])
+            )
+            self.root.context.active_parser.object_stack.append(parser_to_push)
+        elif new_character == "]":
+            self.seen_list_closer = True
         return self
 
     def get_allowed_characters(self) -> str:
         if not self.seen_list_opener:
-            return "[" + WHITESPACE_CHARACTERS
+            return f"[{WHITESPACE_CHARACTERS}"
         elif not self.seen_list_closer:
             return self.get_allowed_control_characters() + WHITESPACE_CHARACTERS
         else:

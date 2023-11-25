@@ -287,9 +287,7 @@ class JsonSchemaObject(BaseModel):
 
     @cached_property
     def ref_type(self) -> Optional[JSONReference]:
-        if self.ref:
-            return get_ref_type(self.ref)
-        return None  # pragma: no cover
+        return get_ref_type(self.ref) if self.ref else None
 
     @cached_property
     def type_has_null(self) -> bool:

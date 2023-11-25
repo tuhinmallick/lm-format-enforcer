@@ -33,17 +33,17 @@ class RegexParser(CharacterLevelParser):
     def add_character(self, new_character: str) -> 'RegexParser':
         if self.current_state == RegexParser.INVALID_STATE:
             return self
-        
+
         state = self.current_state
         fsm = self.context.pattern
         # Mostly taken from FSM.accept()
         symbol = new_character
-        if anything_else in fsm.alphabet and not symbol in fsm.alphabet:
+        if anything_else in fsm.alphabet and symbol not in fsm.alphabet:
             symbol = anything_else
         transition = fsm.alphabet[symbol]
 
         # Missing transition = transition to dead state
-        if not (state in fsm.map and transition in fsm.map[state]):
+        if state not in fsm.map or transition not in fsm.map[state]:
             return RegexParser(self.context, self.config, RegexParser.INVALID_STATE)
 
         state = fsm.map[state][transition]
@@ -75,7 +75,11 @@ class RegexParser(CharacterLevelParser):
 
     def _update_alphabet(self, new_alphabet: str):
         if self.context:
-            not_anything_else_characters = set([c for c in self.context.pattern.alphabet.keys() if c != anything_else])
+            not_anything_else_characters = {
+                c
+                for c in self.context.pattern.alphabet.keys()
+                if c != anything_else
+            }
             self.context.anything_else_characters = "".join([c for c in new_alphabet if c not in not_anything_else_characters])    
     
     @CharacterLevelParser.config.setter

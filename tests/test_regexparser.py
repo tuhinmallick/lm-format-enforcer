@@ -86,5 +86,5 @@ def test_increasing_alphabet():
     any_regex = '...'
     _test_regex_parsing_with_string('abc', any_regex, True)
     _test_regex_parsing_with_string('abΣ', any_regex, False)
-    custom_alphabet = COMPLETE_ALPHABET + 'Σ'
+    custom_alphabet = f'{COMPLETE_ALPHABET}Σ'
     _test_regex_parsing_with_string('abΣ', any_regex, True, custom_alphabet=custom_alphabet)

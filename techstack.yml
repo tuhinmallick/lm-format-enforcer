@@ -1,0 +1,69 @@
+repo_name: tuhinmallick/lm-format-enforcer
+report_id: 2120d1f49337d30222d7d89e3eb89733
+version: 0.1
+repo_type: Public
+timestamp: '2024-02-19T00:19:30+00:00'
+requested_by: noamgat
+provider: github
+branch: main
+detected_tools_count: 5
+tools:
+- name: Python
+  description: A clear and powerful object-oriented programming language, comparable
+    to Perl, Ruby, Scheme, or Java.
+  website_url: https://www.python.org
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/993/pUBY5pVj.png
+  detection_source_url: https://github.com/tuhinmallick/lm-format-enforcer
+  detection_source: Repo Metadata
+- name: Git
+  description: Fast, scalable, distributed revision control system
+  website_url: http://git-scm.com/
+  open_source: true
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Version Control System
+  image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/tuhinmallick/lm-format-enforcer
+  detection_source: Repo Metadata
+- name: GitHub Actions
+  description: Automate your workflow from idea to production
+  website_url: https://github.com/features/actions
+  open_source: false
+  hosted_saas: true
+  category: Build, Test, Deploy
+  sub_category: Continuous Integration
+  image_url: https://img.stackshare.io/service/11563/actions.png
+  detection_source_url: https://github.com/tuhinmallick/lm-format-enforcer/blob/main/.github/workflows/publish_to_pypi.yml
+  detection_source: ".github/workflows/publish_to_pypi.yml"
+  last_updated_by: Noam Gat
+  last_updated_on: 2023-10-10 12:06:39.000000000 Z
+- name: PyPI
+  description: A repository of software for the Python programming language
+  website_url: https://pypi.org/
+  open_source: false
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Hosted Package Repository
+  image_url: https://img.stackshare.io/service/12572/-RIWgodF_400x400.jpg
+  detection_source_url: https://github.com/tuhinmallick/lm-format-enforcer/blob/main/pyproject.toml
+  detection_source: pyproject.toml
+  last_updated_by: Noam Gat
+  last_updated_on: 2023-09-21 13:00:45.000000000 Z
+- name: pydantic
+  description: Data validation and settings management using python 3.6 type hinting
+  package_url: https://pypi.org/project/pydantic
+  version: 1.10.8
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: PyPI Packages
+  image_url: https://img.stackshare.io/package/20022/default_b0d1a54f127d7017fce41c15f5e85568fb7019ed.png
+  detection_source_url: https://github.com/tuhinmallick/lm-format-enforcer/blob/main/pyproject.toml
+  detection_source: pyproject.toml
+  last_updated_by: Noam Gat
+  last_updated_on: 2023-09-21 13:00:45.000000000 Z
